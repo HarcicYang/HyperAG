@@ -1,16 +1,52 @@
-# 这是一个示例 Python 脚本。
+import asyncio
+from typing import Union
+from hyperot import configurator
 
-# 按 Shift+F10 执行或将其替换为您的代码。
-# 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
+from cfgr.manager import Serializers  # Maybe I've forgotten sth when coding for ucfgr? IDK.
+
+try:
+    configurator.BotConfig.load_from("config.json", Serializers.JSON, "hyper-bot")
+except FileNotFoundError:
+    configurator.BotConfig.create_and_write("config.json", Serializers.JSON)
+    print("没有找到配置文件，已自动创建，请填写后重启")
+    exit(-1)
+if True:
+    from hyperot.adapters import builtins as adp
+
+    adp.load_onebot()
+
+    from hyperot import listener, hyperogger, Client
+    from hyperot.events import GroupMessageEvent
+    from hyperot.common import Message
+    from hyperot.segments import *
+
+    from core.openai_compatible import CoreOpenAI
+
+config = configurator.BotConfig.get("hyper-bot")
+logger = hyperogger.Logger()
+logger.set_level(config.log_level)
 
 
-def print_hi(name):
-    # 在下面的代码行中使用断点来调试脚本。
-    print(f'Hi, {name}')  # 按 Ctrl+F8 切换断点。
+ag: CoreOpenAI = None
+
+async def handler_msg(event: GroupMessageEvent, actions: listener.Actions):
+    global ag
+    if int(event.group_id) not in [623371208, 983497968]:
+        return
+
+    if ag is None:
+        ag = CoreOpenAI(
+            bot_api=actions,
+            key=config.others.get("openai_key"),
+            model=config.others.get("openai_model"),
+            base_url=config.others.get("openai_endpoint"),
+        )
+
+    await ag.event_handler(event)
 
 
-# 按装订区域中的绿色按钮以运行脚本。
-if __name__ == '__main__':
-    print_hi('PyCharm')
+with Client() as cli:
+    cli.subscribe(handler_msg, GroupMessageEvent)
+    cli.run()
 
-# 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
+listener.run()

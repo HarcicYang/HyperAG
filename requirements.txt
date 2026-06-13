@@ -1,0 +1,6 @@
+hyper-bot
+websocket-client
+httpx
+flask
+aiohttp
+openai
