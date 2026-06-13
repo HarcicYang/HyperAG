@@ -63,7 +63,7 @@ class CoreOpenAI(AgentCoreBase):
                                 case "at":
                                     new_mess.append(segments.At(j["params"].get("qq") or j.get("qq")))
                                 case "reply":
-                                    new_mess.append(segments.Reply(j["params"].get("reply") or j.get("reply")))
+                                    new_mess.append(segments.Reply(j["params"].get("id") or j.get("id")))
                                 case _:
                                     raise NotImplementedError
                         new_mess = Message(*new_mess)
