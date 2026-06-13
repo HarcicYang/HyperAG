@@ -2,6 +2,15 @@
 
 力图让AI仅通过协议库完全控制QQ，使用[`HypeR Bot`](https://github.com/HarcicYang/HypeR_Bot)
 
+---
+
+## 🚧 WIP
+
+本项目仍处于早期阶段，功能尚不完备。
+
+---
+
+
 ## 食用方法
 
 1. 克隆;
