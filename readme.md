@@ -2,6 +2,8 @@
 
 力图让AI仅通过协议库完全控制QQ，使用[`HypeR Bot`](https://github.com/HarcicYang/HypeR_Bot)
 
+<img src="https://img.shields.io/static/v1?label=LICENSE&message=GPL-3.0&color=lightrey" alt="Badge">
+
 ---
 
 ## 🚧 WIP
