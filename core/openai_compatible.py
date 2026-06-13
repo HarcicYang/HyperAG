@@ -1,5 +1,6 @@
 import json
 import time
+import asyncio
 
 from openai import OpenAI
 
@@ -12,6 +13,9 @@ from . import AgentCoreBase, system_prompt
 config = configurator.BotConfig.get("hyper-bot")
 logger = hyperogger.Logger()
 logger.set_level(config.log_level)
+
+
+lock = asyncio.Lock()
 
 
 class CoreOpenAI(AgentCoreBase):
@@ -28,10 +32,19 @@ class CoreOpenAI(AgentCoreBase):
         self.tools = [i.serialize_openai() for i in super().tools]
         self.history: list = [{"role": "system", "content": system_prompt}]
 
+        self.working = False
+
     async def _tool_call(self):
         pass
 
     async def event_handler(self, event: events.Event):
+        while self.working:
+            time.sleep(0.01)
+        self.working = True
+        await self._event_handler(event)
+        self.working = False
+
+    async def _event_handler(self, event: events.Event):
         data = json.dumps(event.data)
         logger.info(data)
         self.history.append({"role": "user", "content": data})
@@ -68,10 +81,10 @@ class CoreOpenAI(AgentCoreBase):
                                     raise NotImplementedError
                         new_mess = Message(*new_mess)
                         rs = await self.bot_api.send(group_id=group_id, message=new_mess)
-                        time.sleep(3)
                     case _:
                         raise NotImplementedError
                 self.history.append({"role": "tool", "tool_call_id": i.id, "name": i.function.name, "content": str(rs)})
+                time.sleep(3)
             sed_resp = self._oai.chat.completions.create(
                 model=self.model,
                 messages=self.history,
