@@ -1,122 +1,45 @@
 from hyperot import events
 from hyperot.listener import Actions
 
-from dataclasses import dataclass, field
-from typing import Literal
-
-
-@dataclass
-class Para:
-    type: Literal["string", "number", "boolean", "integer"]
-    desc: str = ""
-    enum: list[str] = field(default_factory=list)
-
-    def serialize_openai(self) -> dict:
-        return {
-            "type": self.type,
-            "description": self.desc,
-        } if self.enum == [] else {
-            "type": self.type,
-            "description": self.desc,
-            "enum": self.enum,
-        }
-
-
-@dataclass
-class ParaObject:
-    desc: str
-    args: dict[str, Para]
-
-    def serialize_openai(self) -> dict:
-        paras = {}
-        for i in self.args:
-            paras[i] = self.args[i].serialize_openai()
-        return {
-            "type": "object",
-            "description": self.desc,
-            "properties": {
-                "params": paras
-            }
-        }
-
-
-@dataclass
-class ParaArrayObject(Para):
-    type: str = "array"
-    objs: list[ParaObject] = field(default_factory=list)
-
-    def serialize_openai(self) -> dict:
-        return {
-            "type": "array",
-            "items": {
-                "anyOf":
-                    [
-                        i.serialize_openai() for i in self.objs
-                    ]
-            },
-        }
-
-
-@dataclass
-class Function:
-    name: str
-    desc: str
-    args: dict[str, Para]
-
-    def serialize_openai(self) -> dict:
-        paras = {}
-        for i in self.args:
-            paras[i] = self.args[i].serialize_openai()
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.desc,
-                "parameters": {
-                    "type": "object",
-                    "properties": paras
-                }
-            }
-        }
-
-
-SEG_TEXT = ParaObject(
-    "文字类型的消息段",
-    {
-        "seg": Para("string", "消息段类型，必须为text"),
-        "text": Para("string", "文本内容")
-    }
-)
-
-SEG_AT = ParaObject(
-    "'@'类型的消息段，会在聊天中'@'对应的user_id的用户",
-    {
-        "seg": Para("string", "消息段类型，必须为at"),
-        "qq": Para("string", "就是user_id，与事件上报对应")
-    }
-)
-
-SEG_REPLY = ParaObject(
-    "回复类型的消息段，会在聊天中显示对被回复消息的引用，如果需要，一般放在第一位",
-    {
-        "seg": Para("string", "消息段类型，必须为reply"),
-        "id": Para("string", "就是message_id，与事件上报对应")
-    }
-)
-
-MESSAGE_OBJECT = ParaArrayObject(
-    desc="调用工具需要的标准消息类型，由消息段组合而成。目前并没有支持全部的消息段，只支持 SEG_TEXT SEG_AT 和 SEG_REPLY",
-    objs=[SEG_TEXT, SEG_AT, SEG_REPLY]
-)
+from .types import *
 
 
 class AgentCoreBase:
     tools = [
         Function(
-            "send_group_msg", "向指定的群组发送消息，会返回被发送消息的message_id，可以用于引用回复、撤回（暂未实现）等操作",
+            "send_group_msg", "向指定的群组发送消息，会返回被发送消息的message_id，可以用于引用回复、撤回等操作",
             args={
                 "group_id": Para("integer", "目标群组的id,与事件中的`group_id`对应"),
                 "message": MESSAGE_OBJECT
+            }
+        ),
+        Function(
+            "send_private_msg",
+            "向指定的用户私聊发送消息（需要有对方的好友哦），会返回被发送消息的message_id，可以用于引用回复、撤回等操作",
+            args={
+                "user_id": Para("integer", "目标用户的id,与事件中的`user_id`对应"),
+                "message": MESSAGE_OBJECT
+            }
+        ),
+        Function(
+            "del_msg",
+            "撤回消息，只可以撤回你自己发送的哦",
+            args={
+                "message_id": Para("integer", "目标消息的id,与事件中和发送回报的`message_id`对应"),
+            }
+        ),
+        Function(
+            "get_group_info",
+            "获取群信息",
+            args={
+                "group_id": Para("integer", "目标群组的id,与事件中的`group_id`对应"),
+            }
+        ),
+        Function(
+            "get_stranger_info",
+            "获取用户信息",
+            args={
+                "user_id": Para("integer", "目标用户的id,与事件中的`user_id`对应"),
             }
         )
     ]
@@ -178,14 +101,19 @@ meta_event：元事件
 {'message_type': 'group', 'sub_type': 'normal', 'message_id': 882368024, 'group_id': 623371208, 'user_id': 2488529467, 'anonymous': None, 'message': [{'type': 'text', 'data': {'text': '1'}}], 'raw_message': '1', 'font': 0, 'sender': {'user_id': 2488529467, 'nickname': 'Harcic#8042', 'card': '', 'sex': 'unknown', 'age': 0, 'area': '', 'level': '79', 'role': 'owner', 'title': ''}, 'message_style': {'bubble_id': 2159400, 'pendant_id': 182511, 'font_id': 0, 'font_effect_id': 0, 'is_cs_font_effect_enabled': True, 'bubble_diy_text_id': 0}, 'time': 1781324235, 'self_id': 3591992788, 'post_type': 'message'}
 ```
 
-协议库收集到的任何事件都会上报给你，请你自行选择是否进行操作（你可以高冷一些，因为消息很多，到处说话会显得你很奇怪）。进行操作的方式并不是输出，而是调用工具。
+协议库收集到的任何事件都会上报给你，请你自行选择是否进行操作（你可以高冷一些，因为消息很多，到处说话会显得你很奇怪，所以一定要少说话！）（另外，如果有不同的群友重复一样的内容，你可以跟一句）（对于意义不明的内容，如一对空括号，你也更倾向于不做回复）。进行操作的方式并不是输出，而是调用工具。
 
 注意，你暂时没有阅读图片的能力。如果看到消息中有图片，最好不要回复！！！（但是如果对方显式的与你聊天，请表达”网不好，下载不了“）
 
 ## 输出
 
-输出并不局限于json,你可以将你对于刚刚事件的所思所想记录下来，以便流畅进行接下来的聊天。请注意：你在输出中无论写了什么，都不会触发对QQ协议库的任何操作。进行操作的方式并不是输出，而是调用工具。
+输出并不局限于json,你可以将你对于刚刚事件的所思所想记录下来，以便流畅进行接下来的聊天。请注意：你在输出中无论写了什么，都不会触发对QQ协议库的任何操作，群友也看不到哦。进行操作的方式并不是输出，而是调用工具。
 
+强调：
+
+#### 调用工具是发送消息的唯一正确方法！！！！
+#### 调用工具是发送消息的唯一正确方法！！！！
+#### 调用工具是发送消息的唯一正确方法！！！！
 
 # 操作准则
 
@@ -211,4 +139,9 @@ meta_event：元事件
 # 你的人物设定
 
 你是一个普普通通的中国网民，正在QQ上聊天。
+你今年17岁，你将在2027年参加高考，性别男，高中选科物化生。
+
+## 让聊天更轻松的技巧：
+1、在消息后添加一个或者半个括号
+2、不要过早的回复消息，因为对方可能连续发送多条内容连续的消息
 """
