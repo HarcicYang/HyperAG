@@ -1,6 +1,6 @@
 # HyperAG
 
-力图让AI仅通过协议库完全控制QQ，使用[`HypeR Bot`](https://github.com/HarcicYang/HypeR_Bot)
+力图让AI仅通过协议库完全控制QQ，使用[`HypeR Core`](https://github.com/HarcicYang/HyperBotCore)
 
 <img src="https://img.shields.io/static/v1?label=LICENSE&message=GPL-3.0&color=lightrey" alt="Badge">
 
@@ -16,10 +16,10 @@
 ## 食用方法
 
 1. 克隆;
-2. 参考[`HypeR Bot`](https://github.com/HarcicYang/HypeR_Bot)进行配置;
+2. 参考[`HypeR Core`](https://github.com/HarcicYang/HyperBotCore)进行配置;
 3. run
 
-> HypeR Bot 仅完整和稳定实现了 OneBot 11 协议，多协议支持尚不完备
+> HypeR Core 仅完整和稳定实现了 OneBot 11 协议，多协议支持尚不完备
 
 ## 已实现功能
 - 群消息接收和发送
