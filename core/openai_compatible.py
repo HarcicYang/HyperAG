@@ -2,14 +2,19 @@ import json
 import math
 import time
 import asyncio
+import httpx
+from io import BytesIO
 from typing import Union
-
+import moondream as md
+from PIL import Image
 from openai import OpenAI
 
 import hyperot.segments
 from hyperot.listener import Actions
 from hyperot import events, configurator, hyperogger, segments
 from hyperot.common import Message
+from openai.types.admin.organization import role
+
 from . import AgentCoreBase, system_prompt
 
 import assets
@@ -37,6 +42,7 @@ class CoreOpenAI(AgentCoreBase):
         try:
             with open("history.json", "r") as f:
                 self.history = json.load(f)
+                self.history[0]["content"] = system_prompt
         except FileNotFoundError:
             pass
 
@@ -46,11 +52,11 @@ class CoreOpenAI(AgentCoreBase):
         with open("history.json", "w") as f:
             json.dump(self.history, f, indent=2)
 
-    async def event_handler(self, event: Union[events.Event, str]):
+    async def event_handler(self, event: Union[events.Event, str], tool_choice: str = "auto"):
         while self.working:
             time.sleep(0.01)
         self.working = True
-        await self._event_handler(event)
+        await self._event_handler(event, tool_choice)
         self.working = False
 
     async def create_msg(self, raw_mess: dict) -> Message:
@@ -69,7 +75,7 @@ class CoreOpenAI(AgentCoreBase):
                     raise NotImplementedError
         return Message(*new_mess)
 
-    async def _event_handler(self, event: Union[events.Event, str]):
+    async def _event_handler(self, event: Union[events.Event, str], tool_choice: str = "auto"):
         data = event if isinstance(event, str) else json.dumps(event.data)
         logger.info(data)
         self.history.append({"role": "user", "content": data})
@@ -77,7 +83,7 @@ class CoreOpenAI(AgentCoreBase):
             model=self.model,
             messages=self.history,
             tools=self.tools,
-            tool_choice="auto",
+            tool_choice=tool_choice,
         )
         mess = resp.choices[0].message
         call = mess.tool_calls
@@ -137,6 +143,17 @@ class CoreOpenAI(AgentCoreBase):
                             user_id=user_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
                         )
                         rs = rs.raw
+                    case "read_image":
+                        url = params.get("url")
+                        rs = await self.ds_image_handler(url)
+                    case "clear":
+                        content = params.get("content")
+                        self.history = [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": "SYSTEM -- 先前消息的全部总结 --"},
+                            {"role": "assistant", "content": content}
+                        ]
+                        return
                     case _:
                         raise NotImplementedError
                 self.history.append({"role": "tool", "tool_call_id": i.id, "name": i.function.name, "content": str(rs)})
@@ -152,3 +169,15 @@ class CoreOpenAI(AgentCoreBase):
 
     async def image_handler(self, url: str):
         raise NotImplementedError
+
+    @staticmethod
+    async def ds_image_handler(url: str) -> str:
+        try:
+            model = md.vl(api_key=config.others.get("moondream_key"),local=config.others.get("moondream_local"))
+            data = httpx.get(url).content
+            image = Image.open(BytesIO(data))
+            caption = model.caption(image)["caption"]
+        except Exception as e:
+            print(repr(e))
+            caption = "（网络不太好，看不到）"
+        return caption

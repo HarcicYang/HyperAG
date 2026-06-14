@@ -63,14 +63,21 @@ async def heartbeat():
             base_time = base_time * 0.12
         
 
+async def auto_summarize():
+    global ag
+    while True:
+        time.sleep(60 * 60 * 1)
+        await ag.event_handler("SYSTEM: 请你总结以上全部消息，分条列出，随后调用`clear`工具以完成聊天总结。", "clear")
+
 
 heartbeat_task: asyncio.Task = None
+auto_summarize_task: asyncio.Task = None
 
 
 async def handler_msg(event: ANY_EVENT, actions: listener.Actions):
     global acted
-    global ag, heartbeat_task
-    if isinstance(event, GroupMessageEvent) and int(event.group_id) not in [623371208, 983497968, 895857556, 991819754]:
+    global ag, heartbeat_task, auto_summarize_task
+    if isinstance(event, GroupMessageEvent) and int(event.group_id) not in config.others.get("white"):
         return
 
     if ag is None:
@@ -83,6 +90,8 @@ async def handler_msg(event: ANY_EVENT, actions: listener.Actions):
 
     if heartbeat_task is None:
         heartbeat_task = asyncio.create_task(heartbeat())
+    if auto_summarize_task is None:
+        auto_summarize_task = asyncio.create_task(auto_summarize())
 
     await ag.event_handler(event)
     acted += 1

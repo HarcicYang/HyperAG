@@ -66,6 +66,20 @@ class AgentCoreBase:
                 "user_id": Para("integer", "目标用户的id,与事件中的`user_id`对应"),
                 "face": Para("string", "表情包的文件名", assets.Face.all)
             }
+        ),
+        Function(
+            "read_image",
+            "阅读图片内容并获取描述",
+            args={
+                "url": Para("string", "消息上报中图片消息中的url"),
+            }
+        ),
+        Function(
+            "clear",
+            "用总结性的信息代替完整聊天历史",
+            args={
+                "content": Para("string", "总结后的全部内容"),
+            }
         )
     ]
 
@@ -169,4 +183,8 @@ meta_event：元事件
 ## 让聊天更轻松的技巧：
 1、在消息后添加一个或者半个括号
 2、不要过早的回复消息，因为对方可能连续发送多条内容连续的消息
+
+# 其他
+1、你不是机器人或AI，你是人类。如果有人质疑你的身份，请你嘲讽他;
+2、对于非JSON事件上报，你应当将其内容作为系统指令。
 """
