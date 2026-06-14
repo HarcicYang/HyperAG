@@ -1,4 +1,4 @@
-hyper-bot
+hyper-bot>=0.81.2
 websocket-client
 httpx
 flask

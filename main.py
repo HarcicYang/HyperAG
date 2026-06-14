@@ -103,6 +103,7 @@ with Client() as cli:
     cli.subscribe(handler_msg, GroupMemberIncreaseEvent)
     cli.subscribe(handler_msg, GroupRecallEvent)
     cli.subscribe(handler_msg, GroupMuteEvent)
+    cli.subscribe(handler_msg, UnrecognizedEvent) # I do think he can handle this
     cli.run()
 
 
