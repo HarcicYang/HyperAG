@@ -29,6 +29,8 @@ logger.set_level(config.log_level)
 
 
 ag: CoreOpenAI = None
+acted = 0
+
 
 ANY_EVENT = Union[
     MessageEvent,
@@ -38,18 +40,37 @@ ANY_EVENT = Union[
 
 
 async def heartbeat():
-    global ag
+    global ag, acted
+    
+    base_time = 5
+    
     while True:
-        time.sleep(60 * 5)
-        await ag.event_handler("<Heartbeat> QQ上什么也没有发生，但是如果你需要，你也许可以借助这个机会发消息。心跳事件每5min发生一次。")
+        last_acted = acted
+        time.sleep(60 * base_time)
+        await ag.event_handler(f"Heartbeat {base_time} mins")
+        delta = acted - last_acted
+        if delta == 0:
+            base_time = base_time * 4
+        elif 0 < delta / base_time <= 0.7:
+            base_time = base_time * 2
+        elif 0.7 < delta / base_time <= 1:
+            base_time = base_time * 1
+        elif 1 < delta / base_time <= 1.2:
+            base_time = base_time  * 0.5
+        elif 1.2 < delta / base_time <= 2:
+            base_time = base_time * 0.25
+        else:
+            base_time = base_time * 0.12
+        
 
 
 heartbeat_task: asyncio.Task = None
 
 
 async def handler_msg(event: ANY_EVENT, actions: listener.Actions):
+    global acted
     global ag, heartbeat_task
-    if isinstance(event, GroupMessageEvent) and int(event.group_id) not in [623371208, 983497968]:
+    if isinstance(event, GroupMessageEvent) and int(event.group_id) not in [623371208, 983497968, 895857556, 991819754]:
         return
 
     if ag is None:
@@ -64,6 +85,7 @@ async def handler_msg(event: ANY_EVENT, actions: listener.Actions):
         heartbeat_task = asyncio.create_task(heartbeat())
 
     await ag.event_handler(event)
+    acted += 1
 
 
 with Client() as cli:
@@ -71,6 +93,7 @@ with Client() as cli:
     cli.subscribe(handler_msg, PrivateMessageEvent)
     cli.subscribe(handler_msg, GroupMemberIncreaseEvent)
     cli.subscribe(handler_msg, GroupRecallEvent)
+    cli.subscribe(handler_msg, GroupMuteEvent)
     cli.run()
 
 

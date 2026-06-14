@@ -3,6 +3,8 @@ from hyperot.listener import Actions
 
 from .types import *
 
+import assets
+
 
 class AgentCoreBase:
     tools = [
@@ -40,6 +42,29 @@ class AgentCoreBase:
             "获取用户信息",
             args={
                 "user_id": Para("integer", "目标用户的id,与事件中的`user_id`对应"),
+            }
+        ),
+        Function(
+            "get_msg",
+            "获取消息信息，这个消息可能是你没有收到但是被别人提及的消息",
+            args={
+                "message_id": Para("integer", "目标消息的id,与事件中的`message_id`对应"),
+            }
+        ),
+        Function(
+            "send_group_face",
+            "向指定聊群发送一个表情包",
+            args={
+                "group_id": Para("integer", "目标群组的id,与事件中的`group_id`对应"),
+                "face": Para("string", "表情包的文件名", assets.Face.all)
+            }
+        ),
+        Function(
+            "send_private_face",
+            "向指定用户饲料发送一个表情包",
+            args={
+                "user_id": Para("integer", "目标用户的id,与事件中的`user_id`对应"),
+                "face": Para("string", "表情包的文件名", assets.Face.all)
             }
         )
     ]

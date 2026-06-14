@@ -1,4 +1,5 @@
 import json
+import math
 import time
 import asyncio
 from typing import Union
@@ -11,10 +12,11 @@ from hyperot import events, configurator, hyperogger, segments
 from hyperot.common import Message
 from . import AgentCoreBase, system_prompt
 
+import assets
+
 config = configurator.BotConfig.get("hyper-bot")
 logger = hyperogger.Logger()
 logger.set_level(config.log_level)
-
 
 lock = asyncio.Lock()
 
@@ -39,7 +41,6 @@ class CoreOpenAI(AgentCoreBase):
             pass
 
         self.working = False
-
 
     async def save(self):
         with open("history.json", "w") as f:
@@ -98,6 +99,7 @@ class CoreOpenAI(AgentCoreBase):
                     case "send_group_msg":
                         group_id = params.get("group_id")
                         new_mess = await self.create_msg(params.get("message"))
+                        time.sleep(math.log(len(str(new_mess)) + 3) * 0.5)
                         rs = await self.bot_api.send(group_id=group_id, message=new_mess)
                         rs = rs.raw
                     case "send_private_msg":
@@ -116,6 +118,24 @@ class CoreOpenAI(AgentCoreBase):
                     case "get_stranger_info":
                         user_id = params.get("user_id")
                         rs = await self.bot_api.get_stranger_info(user_id)
+                        rs = rs.raw
+                    case "get_msg":
+                        message_id = params.get("message_id")
+                        rs = await self.bot_api.get_msg(message_id)
+                        rs = rs.raw
+                    case "send_group_face":
+                        group_id = params.get("group_id")
+                        file = getattr(assets.Face, params.get("face", "KIANA_EATING"))
+                        rs = await self.bot_api.send(
+                            group_id=group_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
+                        )
+                        rs = rs.raw
+                    case "send_user_face":
+                        user_id = params.get("user_id")
+                        file = getattr(assets.Face, params.get("face", "KIANA_EATING"))
+                        rs = await self.bot_api.send(
+                            user_id=user_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
+                        )
                         rs = rs.raw
                     case _:
                         raise NotImplementedError
