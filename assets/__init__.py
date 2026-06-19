@@ -25,3 +25,7 @@ class Face(Resource):
     TERIRI_WISDOM_2: str = os.path.abspath("assets/" + "teriri_wisdom_2.png")
     VV_GENE: str = os.path.abspath("assets/" + "vv_gene.png")
     VV_STOP: str = os.path.abspath("assets/" + "vv_stop.png")
+
+with open("assets/" + "system.md", "r") as f:
+    with open("assets/" + "role.md", "r") as g:
+        system_prompt = f.read() + g.read()
