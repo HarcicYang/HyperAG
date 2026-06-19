@@ -4,26 +4,15 @@ import asyncio
 import math
 import time
 from typing import Optional, Callable
-from hyperot import configurator
-from cfgr.manager import Serializers  # Maybe I've forgotten sth when coding for ucfgr? IDK.
+import hyperot
 
-try:
-    configurator.BotConfig.load_from("config.json", Serializers.JSON, "hyper-bot")
-except FileNotFoundError:
-    configurator.BotConfig.create_and_write("config.json", Serializers.JSON)
-    print("没有找到配置文件，已自动创建，请填写后重启")
-    exit(-1)
-if True:
-    from hyperot.adapters import builtins as adp
+hyperot.init()
 
-    adp.load_onebot()
+from hyperot import listener, Client
+from hyperot.events import *
+from hyperot.segments import *
 
-    from hyperot import listener, Client
-    from hyperot.events import *
-    from hyperot.common import Message
-    from hyperot.segments import *
-
-    from core.openai_compatible import CoreOpenAI
+from core.openai_compatible import CoreOpenAI
 
 CONFIG = agconfig.BotConfig
 
