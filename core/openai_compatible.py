@@ -1,6 +1,5 @@
 import json
 import math
-import time
 import asyncio
 import httpx
 from io import BytesIO
@@ -13,7 +12,6 @@ import hyperot.segments
 from hyperot.listener import Actions
 from hyperot import events, configurator, hyperogger, segments
 from hyperot.common import Message
-from openai.types.admin.organization import role
 
 from . import AgentCoreBase, system_prompt
 
@@ -23,7 +21,7 @@ config = configurator.BotConfig.get("hyper-bot")
 logger = hyperogger.Logger()
 logger.set_level(config.log_level)
 
-lock = asyncio.Lock()
+# lock = asyncio.Lock()
 
 
 class CoreOpenAI(AgentCoreBase):
@@ -176,7 +174,7 @@ class CoreOpenAI(AgentCoreBase):
     @staticmethod
     async def ds_image_handler(url: str) -> str:
         try:
-            model = md.vl(api_key=config.others.get("moondream_key"),local=config.others.get("moondream_local"))
+            model = md.vl(api_key=config.others.moondream_key, local=config.others.moondream_local)
             data = httpx.get(url).content
             image = Image.open(BytesIO(data))
             caption = model.caption(image)["caption"]
