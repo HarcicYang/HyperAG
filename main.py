@@ -24,7 +24,6 @@ if True:
     from hyperot.segments import *
 
     from core.openai_compatible import CoreOpenAI
-    from core.utils import Result
 
 CONFIG = agconfig.BotConfig
 
@@ -58,8 +57,6 @@ async def heartbeat():
         elif 0.7 < delta / base_time <= 1:
             base_time = base_time * 1
         elif 1 < delta / base_time <= 1.2:
-            base_time = base_time * 0.5
-            base_time = base_time * 0.5
             base_time = base_time * 0.5
         elif 1.2 < delta / base_time <= 2:
             base_time = base_time * 0.25

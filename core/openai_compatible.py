@@ -62,7 +62,7 @@ class CoreOpenAI(AgentCoreBase):
     async def create_msg(self, raw_mess: dict) -> Message:
         new_mess = []
         for j in raw_mess:
-            print(raw_mess)
+            # logger.debug(raw_mess)
             seg_type = j["params"]["seg"]
             match seg_type:
                 case "text":
@@ -156,6 +156,7 @@ class CoreOpenAI(AgentCoreBase):
                             {"role": "user", "content": "SYSTEM -- 先前消息的全部总结 --"},
                             {"role": "assistant", "content": content}
                         ]
+                        logger.info("更新消息总结： \n" + content)
                         return
                     case _:
                         raise NotImplementedError
@@ -180,6 +181,6 @@ class CoreOpenAI(AgentCoreBase):
             image = Image.open(BytesIO(data))
             caption = model.caption(image)["caption"]
         except Exception as e:
-            print(repr(e))
+            logger.error(repr(e))
             caption = "（网络不太好，看不到）"
         return caption
