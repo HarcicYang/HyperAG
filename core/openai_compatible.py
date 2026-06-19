@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import Union
 import moondream as md
 from PIL import Image
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 import hyperot.segments
 from hyperot.listener import Actions
@@ -29,9 +29,9 @@ class CoreOpenAI(AgentCoreBase):
         super().__init__(bot_api)
         self.model = model
         if base_url == "":
-            self._oai = OpenAI(api_key=key)
+            self._oai = AsyncOpenAI(api_key=key)
         else:
-            self._oai = OpenAI(
+            self._oai = AsyncOpenAI(
                 api_key=key,
                 base_url=base_url
             )
@@ -77,7 +77,7 @@ class CoreOpenAI(AgentCoreBase):
         data = event if isinstance(event, str) else json.dumps(event.data)
         logger.info(data)
         self.history.append({"role": "user", "content": data})
-        resp = self._oai.chat.completions.create(
+        resp = await self._oai.chat.completions.create(
             model=self.model,
             messages=self.history,
             tools=self.tools,
@@ -159,7 +159,7 @@ class CoreOpenAI(AgentCoreBase):
                     case _:
                         raise NotImplementedError
                 self.history.append({"role": "tool", "tool_call_id": i.id, "name": i.function.name, "content": str(rs)})
-            sed_resp = self._oai.chat.completions.create(
+            sed_resp = await self._oai.chat.completions.create(
                 model=self.model,
                 messages=self.history,
             )

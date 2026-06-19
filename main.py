@@ -196,4 +196,5 @@ with Client() as cli:
     cli.subscribe(general_handler, GroupRecallEvent)
     cli.subscribe(general_handler, GroupMuteEvent)
     cli.subscribe(general_handler, UnrecognizedEvent)  # I do think he can handle this
-    cli.run()
+
+    asyncio.get_event_loop().run_until_complete(cli.run())
