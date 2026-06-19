@@ -54,7 +54,7 @@ class CoreOpenAI(AgentCoreBase):
 
     async def event_handler(self, event: Union[events.Event, str], tool_choice: str = "auto"):
         while self.working:
-            time.sleep(0.01)
+            await asyncio.sleep(0.01)
         self.working = True
         await self._event_handler(event, tool_choice)
         self.working = False
@@ -105,7 +105,7 @@ class CoreOpenAI(AgentCoreBase):
                     case "send_group_msg":
                         group_id = params.get("group_id")
                         new_mess = await self.create_msg(params.get("message"))
-                        time.sleep(math.log(len(str(new_mess)) + 3) * 0.5)
+                        await asyncio.sleep(math.log(len(str(new_mess)) + 3) * 0.5)
                         rs = await self.bot_api.send(group_id=group_id, message=new_mess)
                         rs = rs.raw
                     case "send_private_msg":
@@ -145,7 +145,10 @@ class CoreOpenAI(AgentCoreBase):
                         rs = rs.raw
                     case "read_image":
                         url = params.get("url")
-                        rs = await self.ds_image_handler(url)
+                        if "deepseek" in self.model:
+                            rs = await self.ds_image_handler(url)
+                        else:
+                            rs = await self.image_handler(url)
                     case "clear":
                         content = params.get("content")
                         self.history = [
@@ -157,7 +160,6 @@ class CoreOpenAI(AgentCoreBase):
                     case _:
                         raise NotImplementedError
                 self.history.append({"role": "tool", "tool_call_id": i.id, "name": i.function.name, "content": str(rs)})
-                time.sleep(3)
             sed_resp = self._oai.chat.completions.create(
                 model=self.model,
                 messages=self.history,
