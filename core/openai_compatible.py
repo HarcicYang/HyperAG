@@ -21,6 +21,7 @@ config = configurator.BotConfig.get("hyper-bot")
 logger = hyperogger.Logger()
 logger.set_level(config.log_level)
 
+
 # lock = asyncio.Lock()
 
 
@@ -87,8 +88,8 @@ class CoreOpenAI(AgentCoreBase):
         call = mess.tool_calls
         logger.info(str(mess))
         logger.info(str(call))
-        if call:
-            self.history.append(mess.to_dict())
+        self.history.append(mess.to_dict())
+        while call:
             for i in call:
                 name = i.function.name
                 try:
@@ -104,16 +105,16 @@ class CoreOpenAI(AgentCoreBase):
                         group_id = params.get("group_id")
                         new_mess = await self.create_msg(params.get("message"))
                         await asyncio.sleep(math.log(len(str(new_mess)) + 3) * 0.5)
-                        rs = await self.bot_api.send(group_id=group_id, message=new_mess)
+                        rs = await self.bot_api.send_group_msg(group_id=group_id, message=new_mess)
                         rs = rs.raw
                     case "send_private_msg":
                         user_id = params.get("user_id")
                         new_mess = await self.create_msg(params.get("message"))
-                        rs = await self.bot_api.send(user_id=user_id, message=new_mess)
+                        rs = await self.bot_api.send_private_msg(user_id=user_id, message=new_mess)
                         rs = rs.raw
                     case "del_msg":
                         msg_id = params.get("message_id")
-                        await self.bot_api.del_message(msg_id)
+                        await self.bot_api.del_msg(msg_id)
                         rs = "(无返回)"
                     case "get_group_info":
                         group_id = params.get("group_id")
@@ -130,14 +131,14 @@ class CoreOpenAI(AgentCoreBase):
                     case "send_group_face":
                         group_id = params.get("group_id")
                         file = getattr(assets.Face, params.get("face", "KIANA_EATING"))
-                        rs = await self.bot_api.send(
+                        rs = await self.bot_api.send_group_msg(
                             group_id=group_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
                         )
                         rs = rs.raw
                     case "send_user_face":
                         user_id = params.get("user_id")
                         file = getattr(assets.Face, params.get("face", "KIANA_EATING"))
-                        rs = await self.bot_api.send(
+                        rs = await self.bot_api.send_private_msg(
                             user_id=user_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
                         )
                         rs = rs.raw
@@ -159,14 +160,17 @@ class CoreOpenAI(AgentCoreBase):
                     case _:
                         raise NotImplementedError
                 self.history.append({"role": "tool", "tool_call_id": i.id, "name": i.function.name, "content": str(rs)})
-            sed_resp = await self._oai.chat.completions.create(
+            resp = await self._oai.chat.completions.create(
                 model=self.model,
                 messages=self.history,
+                tools=self.tools,
+                tool_choice=tool_choice
             )
-            fin_mess = sed_resp.choices[0].message
-            self.history.append(fin_mess.to_dict())
-            logger.info(str(fin_mess))
-            asyncio.create_task(self.save())
+            mess = resp.choices[0].message
+            call = mess.tool_calls
+            self.history.append(mess.to_dict())
+            logger.info(str(mess))
+        asyncio.create_task(self.save())
 
     async def image_handler(self, url: str):
         raise NotImplementedError

@@ -57,7 +57,10 @@ async def auto_summarize():
     global ag
     while True:
         await asyncio.sleep(60 * 60 * 1)
-        await ag.event_handler("SYSTEM: 请你总结以上全部消息，分条列出，随后调用`clear`工具以完成聊天总结。", "clear")
+        await ag.event_handler(
+            "SYSTEM: 总结以上聊天历史，用于后续`clear`。要求：\n- 分条列出关键事件、话题、决定。\n- 指出待回复的消息、@你或点名你的上下文。\n- 保留未完成任务或需跟进事项。\n完成后立即调用`clear(content)`，content为你的总结文本（不要额外解释）。",
+            "clear"
+        )
 
 
 heartbeat_task: asyncio.Task = None
@@ -76,8 +79,8 @@ async def serve(actions: listener.Actions):
 
     if heartbeat_task is None:
         heartbeat_task = asyncio.create_task(heartbeat())
-    if auto_summarize_task is None:
-        auto_summarize_task = asyncio.create_task(auto_summarize())
+    # if auto_summarize_task is None:
+    #     auto_summarize_task = asyncio.create_task(auto_summarize())
 
 
 async def general_handler(event: NON_MSG_EVENT, actions: listener.Actions):

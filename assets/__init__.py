@@ -26,6 +26,6 @@ class Face(Resource):
     VV_GENE: str = os.path.abspath("assets/" + "vv_gene.png")
     VV_STOP: str = os.path.abspath("assets/" + "vv_stop.png")
 
-with open("assets/" + "system.md", "r") as f:
-    with open("assets/" + "role.md", "r") as g:
+with open("assets/" + "system.md", "r", encoding="utf-8") as f:
+    with open("assets/" + "role.md", "r", encoding="utf-8") as g:
         system_prompt = f.read() + g.read()
