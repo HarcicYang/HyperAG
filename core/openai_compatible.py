@@ -135,7 +135,7 @@ class CoreOpenAI(AgentCoreBase):
                             group_id=group_id, message=Message(segments.Image(file=file, summary="[动画表情]"))
                         )
                         rs = rs.raw
-                    case "send_user_face":
+                    case "send_private_face":
                         user_id = params.get("user_id")
                         file = getattr(assets.Face, params.get("face", "KIANA_EATING"))
                         rs = await self.bot_api.send_private_msg(

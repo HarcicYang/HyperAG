@@ -117,7 +117,7 @@ class MessageCollector:
     async def update_sleep(self, last: float, length: int):
         rate = last / self.delay
         weight_length = 1 if length * 0.2 <= 1 else length * 0.2
-        self.delay = (2 / 3) * (1 - math.cos(math.pi * rate)) + (1 / 3) * weight_length + 1
+        self.delay = (2 / 3) * (1 - math.cos(math.pi * rate)) + (2 / 3) * weight_length + 1
         if self.delay >= 12:
             self.delay = 12
         if self.delay <= 1:
